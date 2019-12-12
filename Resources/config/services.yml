@@ -2,6 +2,7 @@ parameters:
     phumbor.url.builder_factory.class: Thumbor\Url\BuilderFactory
     phumbor.url.transformer.class: Jb\Bundle\PhumborBundle\Transformer\BaseTransformer
     phumbor.twig.extension.class: Jb\Bundle\PhumborBundle\Twig\PhumborExtension
+    phumbor.manager.asset.class: Jb\Bundle\PhumborBundle\Manager\PhumborAssetManager
 
 services:
     phumbor.url.builder_factory:
@@ -20,5 +21,15 @@ services:
         class: '%phumbor.twig.extension.class%'
         arguments:
             - '@phumbor.url.transformer'
+            - '@kernel'
+            - '@phumbor.manager.asset'
         tags:
             - { name: twig.extension }
+
+    phumbor.manager.asset:
+        class: '%phumbor.manager.asset.class%'
+        arguments:
+            - '%phumbor.server.url%'
+            - '%phumbor.secret%'
+            - '@kernel'
+            - '@doctrine.orm.entity_manager'

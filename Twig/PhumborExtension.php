@@ -3,6 +3,9 @@
 namespace Jb\Bundle\PhumborBundle\Twig;
 
 use Jb\Bundle\PhumborBundle\Transformer\BaseTransformer;
+use Jb\Bundle\PhumborBundle\Transformer\Exception\UnknownTransformationException;
+use Jb\Bundle\PhumborBundle\Manager\PhumborAssetManager;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Description of PhumborExtension
@@ -16,14 +19,24 @@ class PhumborExtension extends \Twig_Extension
      */
     protected $transformer;
 
+    /* @var $kernel Kernel */
+    protected $kernel;
+
+    /** @var  PhumborAssetManager */
+    private $phumborAssetManager;
+
     /**
      * Constructor
      *
      * @param \Jb\Bundle\PhumborBundle\Transformer\BaseTransformer $transformer
+     * @param Kernel
+     * @param PhumborAssetManager
      */
-    public function __construct(BaseTransformer $transformer)
+    public function __construct(BaseTransformer $transformer, Kernel $kernel, PhumborAssetManager $phumborAssetManager)
     {
         $this->transformer = $transformer;
+        $this->kernel = $kernel;
+        $this->phumborAssetManager = $phumborAssetManager;
     }
 
     /**
@@ -54,9 +67,23 @@ class PhumborExtension extends \Twig_Extension
      * @param array $overrides
      *
      * @return string
+     *
+     * @throws UnknownTransformationException
      */
     public function transform($orig, $transformation = null, $overrides = array())
     {
+        $enable_upload = $this->kernel->getContainer()->getParameter('phumbor.server.upload_enabled');
+
+        if ($enable_upload) {
+            $is_dev_env         = $this->kernel->getEnvironment() == 'dev';
+            $is_local_filepath  = strpos($orig, 'http') !== 0;
+
+            if ($is_dev_env && $is_local_filepath) {
+                $thumborAsset = $this->phumborAssetManager->get($orig);
+                $orig = $this->phumborAssetManager->getServerUrl().$thumborAsset->getRemotePath();
+            }
+        }
+
         return $this->transformer->transform($orig, $transformation, $overrides);
     }
 

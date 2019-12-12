@@ -34,6 +34,7 @@ class JbPhumborExtension extends Extension
      */
     protected function loadConfiguration(ContainerBuilder $container, array $config)
     {
+        $container->setParameter('phumbor.server.upload_enabled', $config['server']['upload_enabled']);
         $container->setParameter('phumbor.server.url', $config['server']['url']);
         $container->setParameter('phumbor.secret', $config['server']['secret']);
         $container->setParameter('phumbor.transformations', $config['transformations']);

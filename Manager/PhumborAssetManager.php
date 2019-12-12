@@ -3,7 +3,6 @@
 namespace Jb\Bundle\PhumborBundle\Manager;
 
 use Doctrine\ORM\EntityManager;
-use Guzzle\Http\Client;
 use Jb\Bundle\PhumborBundle\Entity\PhumborAsset;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpKernel\Kernel;
@@ -17,7 +16,7 @@ class PhumborAssetManager {
     /* @var $em EntityManager */
     protected $em;
 
-    /* @var $client Client */
+    /* @var $client \GuzzleHttp\Client|\Guzzle\Http\Client */
     protected $client;
 
     /* @var $kernel Kernel */
@@ -28,7 +27,14 @@ class PhumborAssetManager {
         $this->serverKey = $server_key;
         $this->kernel = $kernel;
         $this->em = $em;
-        $this->client = new Client($this->serverUrl);
+
+        if (Kernel::VERSION_ID >= 30000) {
+            $this->client = new \GuzzleHttp\Client([
+                'base_uri' => $this->serverUrl
+            ]);
+        } else {
+            $this->client = new \Guzzle\Http\Client($this->serverUrl);
+        }
     }
 
     public function getServerUrl() {
@@ -38,14 +44,24 @@ class PhumborAssetManager {
     public function upload(PhumborAsset $thumborAsset) {
         $file = $this->getFile($thumborAsset->getLocalPath());
 
-        $request = $this->client->post('/image', [
-            'Content-Type' => $file->getMimeType(),
-            'Slug' => $file->getFilename()
-        ], file_get_contents($file->getPathname()));
+        if (Kernel::VERSION_ID >= 30000) {
+            $response = $this->client->post('/image', [
+                'Content-Type' => $file->getMimeType(),
+                'Slug' => $file->getFilename(),
+                'body' => file_get_contents($file->getPathname())
+            ]);
 
-        $response = $request->send();
+            $remote_path = $response->getHeader('Location')[0];
+        } else {
+            $request = $this->client->post('/image', [
+                'Content-Type' => $file->getMimeType(),
+                'Slug' => $file->getFilename()
+            ], file_get_contents($file->getPathname()));
 
-        $remote_path = (string)$response->getHeader('Location');
+            $response = $request->send();
+
+            $remote_path = (string)$response->getHeader('Location');
+        }
 
         $thumborAsset->setRemotePath($remote_path);
         $this->em->persist($thumborAsset);

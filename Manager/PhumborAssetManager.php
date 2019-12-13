@@ -104,7 +104,9 @@ class PhumborAssetManager {
     }
 
     protected function getFile($local_web_path) {
-        return new File($this->kernel->getRootDir().'/../web/'.$local_web_path);
+        $webdir = $this->kernel->getContainer()->getParameter('phumbor.publicroot');
+
+        return new File($webdir.$local_web_path);
     }
 
 }

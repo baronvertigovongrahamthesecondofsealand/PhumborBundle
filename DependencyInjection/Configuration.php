@@ -31,6 +31,14 @@ class Configuration implements ConfigurationInterface
         
         $rootNode
             ->children()
+                ->arrayNode('local')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('publicroot')
+                            ->defaultNull()
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('server')
                     ->addDefaultsIfNotSet()
                     ->children()

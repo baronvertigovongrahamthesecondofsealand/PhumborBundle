@@ -51,6 +51,12 @@ class Configuration implements ConfigurationInterface
                         ->scalarNode('secret')
                             ->defaultValue('')
                         ->end()
+                        ->scalarNode('upload_auth_username')
+                            ->defaultNull()
+                        ->end()
+                        ->scalarNode('upload_auth_password')
+                            ->defaultNull()
+                        ->end()
                     ->end()
                 ->end()
             ->end();

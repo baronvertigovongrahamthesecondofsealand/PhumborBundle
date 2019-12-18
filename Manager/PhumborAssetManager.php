@@ -13,6 +13,10 @@ class PhumborAssetManager {
 
     protected $serverKey;
 
+    protected $uploadAuthUsername;
+
+    protected $uploadAuthPassword;
+
     /* @var $em EntityManager */
     protected $em;
 
@@ -22,9 +26,11 @@ class PhumborAssetManager {
     /* @var $kernel Kernel */
     protected $kernel;
 
-    public function __construct($server_url, $server_key, Kernel $kernel, EntityManager $em) {
+    public function __construct($server_url, $server_key, $upload_auth_username, $upload_auth_password, Kernel $kernel, EntityManager $em) {
         $this->serverUrl = $server_url;
         $this->serverKey = $server_key;
+        $this->uploadAuthUsername = $upload_auth_username;
+        $this->uploadAuthPassword = $upload_auth_password;
         $this->kernel = $kernel;
         $this->em = $em;
 
@@ -45,18 +51,32 @@ class PhumborAssetManager {
         $file = $this->getFile($thumborAsset->getLocalPath());
 
         if (Kernel::VERSION_ID >= 30000) {
-            $response = $this->client->post('/image', [
+            $config = [
                 'Content-Type' => $file->getMimeType(),
                 'Slug' => $file->getFilename(),
-                'body' => file_get_contents($file->getPathname())
-            ]);
+                'body' => file_get_contents($file->getRealPath())
+            ];
+
+            if ($this->uploadAuthUsername && $this->uploadAuthPassword) {
+                $config['auth'] = [
+                    'username' => $this->uploadAuthUsername,
+                    'password' => $this->uploadAuthPassword
+                ];
+            }
+
+            $response = $this->client->post('/image', $config);
 
             $remote_path = $response->getHeader('Location')[0];
         } else {
             $request = $this->client->post('/image', [
                 'Content-Type' => $file->getMimeType(),
                 'Slug' => $file->getFilename()
-            ], file_get_contents($file->getPathname()));
+            ], file_get_contents($file->getRealPath()));
+
+
+            if ($this->uploadAuthUsername && $this->uploadAuthPassword) {
+                $request->setAuth($this->uploadAuthUsername, $this->uploadAuthPassword);
+            }
 
             $response = $request->send();
 
@@ -66,6 +86,8 @@ class PhumborAssetManager {
         $thumborAsset->setRemotePath($remote_path);
         $this->em->persist($thumborAsset);
         $this->em->flush();
+
+        dump('uploaded successfully');
 
         return $thumborAsset;
     }
@@ -87,7 +109,7 @@ class PhumborAssetManager {
             'localPath' => $local_web_path
         ]);
 
-        $local_hash = sha1_file($file->getPathname());
+        $local_hash = sha1_file($file->getRealPath());
         if ($thumborAsset && $thumborAsset->getLocalHash() != $local_hash) {
             $thumborAsset = $this->remove($thumborAsset);
         }

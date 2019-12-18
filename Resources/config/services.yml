@@ -31,5 +31,7 @@ services:
         arguments:
             - '%phumbor.server.url%'
             - '%phumbor.secret%'
+            - '%phumbor.server.upload_auth_username%'
+            - '%phumbor.server.upload_auth_password%'
             - '@kernel'
             - '@doctrine.orm.entity_manager'

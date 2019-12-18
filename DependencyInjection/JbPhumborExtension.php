@@ -36,6 +36,8 @@ class JbPhumborExtension extends Extension
     {
         $container->setParameter('phumbor.publicroot', $config['local']['publicroot']);
         $container->setParameter('phumbor.server.upload_enabled', $config['server']['upload_enabled']);
+        $container->setParameter('phumbor.server.upload_auth_username', $config['server']['upload_auth_username']);
+        $container->setParameter('phumbor.server.upload_auth_password', $config['server']['upload_auth_password']);
         $container->setParameter('phumbor.server.url', $config['server']['url']);
         $container->setParameter('phumbor.secret', $config['server']['secret']);
         $container->setParameter('phumbor.transformations', $config['transformations']);
